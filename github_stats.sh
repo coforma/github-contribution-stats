@@ -1,19 +1,28 @@
 #!/bin/bash
 
 # GitHub Repository Contribution Stats
-# Usage: ./github_stats.sh owner/repo
+# Usage: ./github_stats.sh owner/repo [since-date]
 
 if [ -z "$1" ]; then
-  echo "Usage: $0 owner/repo"
-  echo "Example: $0 Enterprise-CMCS/macpro-mdct-qmr"
+  echo "Usage: $0 owner/repo [since-date]"
+  echo "Example: $0 coforma/github-contribution-stats"
+  echo "Example: $0 coforma/github-contribution-stats 2025-01-01"
+  echo "If no date is provided, defaults to January 1st of the current year"
   exit 1
 fi
 
 REPO=$1
-START_DATE="2025-01-01"
+
+# Use provided date or default to January 1st of current year
+if [ -n "$2" ]; then
+  START_DATE="$2"
+else
+  CURRENT_YEAR=$(date +%Y)
+  START_DATE="$CURRENT_YEAR-01-01"
+fi
 
 echo "Repository: $REPO"
-echo "Date Range: Since January 1, 2025"
+echo "Date Range: Since $START_DATE"
 echo "============================================"
 echo ""
 

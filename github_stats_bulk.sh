@@ -1,25 +1,34 @@
 #!/bin/bash
 
 # GitHub Repository Contribution Stats (Bulk)
-# Usage: ./github_stats_bulk.sh repos.txt
+# Usage: ./github_stats_bulk.sh repos.txt [since-date]
 
 if [ -z "$1" ]; then
-  echo "Usage: $0 <repos-file>"
+  echo "Usage: $0 <repos-file> [since-date]"
   echo "Example: $0 repos.txt"
+  echo "Example: $0 repos.txt 2025-01-01"
   echo ""
   echo "File format: one repo per line (owner/repo)"
+  echo "If no date is provided, defaults to January 1st of the current year"
   exit 1
 fi
 
 REPOS_FILE=$1
-START_DATE="2025-01-01"
+
+# Use provided date or default to January 1st of current year
+if [ -n "$2" ]; then
+  START_DATE="$2"
+else
+  CURRENT_YEAR=$(date +%Y)
+  START_DATE="$CURRENT_YEAR-01-01"
+fi
 
 if [ ! -f "$REPOS_FILE" ]; then
   echo "Error: File '$REPOS_FILE' not found"
   exit 1
 fi
 
-echo "Analyzing repositories since January 1, 2025"
+echo "Analyzing repositories since $START_DATE"
 echo "============================================"
 echo ""
 
