@@ -6,6 +6,8 @@ Simple bash scripts to calculate contribution statistics for GitHub repositories
 
 - **Single Repository**: Get stats for one repository
 - **Bulk Analysis**: Analyze multiple repositories and get combined totals
+- **User Filtering**: Filter contributions by specific GitHub usernames
+- **Custom Date Ranges**: Specify a start date or default to January 1st of current year
 - Counts commits (all branches) and pull requests
 - Uses GitHub CLI (`gh`) for API access
 
@@ -32,12 +34,19 @@ chmod +x github_stats.sh github_stats_bulk.sh
 Get contribution stats for a single repository:
 
 ```bash
-./github_stats.sh owner/repo
+./github_stats.sh owner/repo [since-date] [--users users-file]
 ```
 
-**Example:**
+**Examples:**
 ```bash
+# Use default date (January 1st of current year)
 ./github_stats.sh coforma/coforma-website-v2
+
+# Specify a custom start date
+./github_stats.sh coforma/coforma-website-v2 2024-06-01
+
+# Filter by specific users
+./github_stats.sh coforma/coforma-website-v2 2025-01-01 --users users.txt
 ```
 
 **Output:**
@@ -78,7 +87,19 @@ your-org/your-repo
 2. Run the bulk script:
 
 ```bash
+./github_stats_bulk.sh repos.txt [since-date] [--users users-file]
+```
+
+**Examples:**
+```bash
+# Use default date (January 1st of current year)
 ./github_stats_bulk.sh repos.txt
+
+# Specify a custom start date
+./github_stats_bulk.sh repos.txt 2024-06-01
+
+# Filter by specific users
+./github_stats_bulk.sh repos.txt 2025-01-01 --users users.txt
 ```
 
 **Output:**
@@ -104,19 +125,64 @@ Total Pull Requests: 481
 Grand Total: 895
 ```
 
+### Filtering by Users
+
+To filter contributions by specific GitHub usernames:
+
+1. Create a users file:
+
+```bash
+cp users.txt.example users.txt
+# Edit users.txt with your GitHub usernames
+```
+
+**users.txt format:**
+```
+# Lines starting with # are comments
+username1
+username2
+username3
+```
+
+2. Use the `--users` flag with either script:
+
+```bash
+./github_stats.sh coforma/github-contribution-stats --users users.txt
+./github_stats_bulk.sh repos.txt --users users.txt
+```
+
+This will count only commits and pull requests authored by the specified users.
+
 ## What's Counted
 
-- **Commits**: All commits across all branches (not just the default branch)
-- **Pull Requests**: All PRs created since January 1, 2025
-- **Date Range**: Hardcoded to January 1, 2025 onwards
+- **Commits**: All commits across all branches authored by specified users (or all users if no filter)
+- **Pull Requests**: All PRs created by specified users (or all users if no filter)
+- **Date Range**: Since the specified date or January 1st of the current year by default
+
+## Advanced Usage
+
+### Combining Options
+
+You can combine date ranges and user filtering:
+
+```bash
+# Filter by users from June 1st, 2024 onwards
+./github_stats.sh coforma/my-repo 2024-06-01 --users users.txt
+
+# Bulk analysis with custom date and user filter
+./github_stats_bulk.sh repos.txt 2024-01-01 --users users.txt
+```
+
+### Parameter Order
+
+The `--users` flag can appear anywhere in the command, but positional arguments must be in order:
+1. First positional: repository/repos file (required)
+2. Second positional: since-date (optional)
+3. Named flag: `--users users-file` (optional)
 
 ## Customization
 
-To change the start date, edit the `START_DATE` variable in either script:
-
-```bash
-START_DATE="2025-01-01"  # Change to your desired date
-```
+The scripts automatically default to January 1st of the current year, but you can specify any date in `YYYY-MM-DD` format as a parameter. User filtering is optional and can be applied to narrow results to specific contributors.
 
 ## License
 
