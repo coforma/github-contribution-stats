@@ -1,0 +1,6 @@
+# Example repos.txt file
+# List one repository per line in owner/repo format
+# Lines starting with # are ignored
+
+Enterprise-CMCS/macpro-mdct-qmr
+coforma/coforma-website-v2
