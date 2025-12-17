@@ -70,8 +70,8 @@ cp repos.txt.example repos.txt
 **repos.txt format:**
 ```
 # Lines starting with # are comments
-Enterprise-CMCS/macpro-mdct-qmr
-coforma/coforma-website-v2
+coforma/github-contribution-stats
+coforma/usa-spending-bot
 your-org/your-repo
 ```
 
@@ -86,12 +86,12 @@ your-org/your-repo
 Analyzing repositories since January 1, 2025
 ============================================
 
-Processing: Enterprise-CMCS/macpro-mdct-qmr
+Processing: coforma/github-contribution-stats
   Commits: 298
   Pull Requests: 357
   Subtotal: 655
 
-Processing: coforma/coforma-website-v2
+Processing: coforma/usa-spending-bot
   Commits: 116
   Pull Requests: 124
   Subtotal: 240
