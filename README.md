@@ -6,6 +6,7 @@ Simple bash scripts to calculate contribution statistics for GitHub repositories
 
 - **Single Repository**: Get stats for one repository
 - **Bulk Analysis**: Analyze multiple repositories and get combined totals
+- **Organization-Wide**: Automatically analyze all repos in a GitHub organization
 - **User Filtering**: Filter contributions by specific GitHub usernames
 - **Custom Date Ranges**: Specify a start date or default to January 1st of current year
 - Counts commits (all branches) and pull requests
@@ -67,7 +68,9 @@ Total Contributions: 240
 
 ### Multiple Repositories (Bulk)
 
-Analyze multiple repositories at once:
+Analyze multiple repositories at once using a repos file or an entire organization:
+
+#### Using a Repos File
 
 1. Create a text file with repositories (one per line):
 
@@ -100,6 +103,26 @@ your-org/your-repo
 
 # Filter by specific users
 ./github_stats_bulk.sh repos.txt 2025-01-01 --users users.txt
+```
+
+#### Using an Organization
+
+Automatically analyze all repositories in a GitHub organization:
+
+```bash
+./github_stats_bulk.sh --org <organization> [since-date] [--users users-file]
+```
+
+**Examples:**
+```bash
+# Analyze all repos in the organization
+./github_stats_bulk.sh --org coforma
+
+# With custom date
+./github_stats_bulk.sh --org coforma 2024-01-01
+
+# With user filtering
+./github_stats_bulk.sh --org coforma 2025-01-01 --users users.txt
 ```
 
 **Output:**
@@ -163,22 +186,22 @@ This will count only commits and pull requests authored by the specified users.
 
 ### Combining Options
 
-You can combine date ranges and user filtering:
+You can combine date ranges and user filtering with either repos files or organizations:
 
 ```bash
-# Filter by users from June 1st, 2024 onwards
-./github_stats.sh coforma/my-repo 2024-06-01 --users users.txt
+# Repos file with users from June 1st, 2024 onwards
+./github_stats_bulk.sh repos.txt 2024-06-01 --users users.txt
 
-# Bulk analysis with custom date and user filter
-./github_stats_bulk.sh repos.txt 2024-01-01 --users users.txt
+# Organization with custom date and user filter
+./github_stats_bulk.sh --org coforma 2024-01-01 --users users.txt
 ```
 
 ### Parameter Order
 
-The `--users` flag can appear anywhere in the command, but positional arguments must be in order:
-1. First positional: repository/repos file (required)
+The `--users` and `--org` flags can appear anywhere in the command, but positional arguments must be in order:
+1. First positional: repository/repos file (required unless using `--org`)
 2. Second positional: since-date (optional)
-3. Named flag: `--users users-file` (optional)
+3. Named flags: `--users users-file` and/or `--org organization` (optional)
 
 ## Customization
 
