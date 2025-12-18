@@ -10,13 +10,25 @@ Bash scripts to calculate contribution statistics for GitHub repositories with f
 - **User Filtering**: Filter contributions by specific GitHub usernames (queries each user individually)
 - **Custom Date Ranges**: Specify a start date or default to January 1st of current year
 - **Rate Limit Handling**: Automatic retry logic with delays to prevent API rate limit errors
+- **Cross-Platform**: Token-based scripts for WSL/Git Bash environments
 - Counts commits (all branches) and pull requests authored by users
-- Uses GitHub CLI (`gh`) for API access
+- Two versions: GitHub CLI-based and Token-based (for environments without `gh` CLI)
 
 ## Prerequisites
 
+### For GitHub CLI Scripts (`github_stats.sh` and `github_stats_bulk.sh`)
+
 - [GitHub CLI (`gh`)](https://cli.github.com/) installed and authenticated
 - `jq` for JSON parsing (usually pre-installed on macOS)
+
+### For Token-Based Scripts (`github_stats_token.sh` and `github_stats_bulk_token.sh`)
+
+- `curl` (pre-installed on most systems)
+- `jq` for JSON parsing
+- GitHub Personal Access Token (PAT)
+- Works on WSL, Git Bash, macOS, Linux
+
+See [TOKEN_SCRIPTS.md](TOKEN_SCRIPTS.md) for detailed token-based script documentation.
 
 ## Installation
 
@@ -26,10 +38,17 @@ git clone https://github.com/coforma/github-contribution-stats.git
 cd github-contribution-stats
 
 # Make scripts executable
-chmod +x github_stats.sh github_stats_bulk.sh generate_repos_file.sh
+chmod +x github_stats.sh github_stats_bulk.sh github_stats_token.sh github_stats_bulk_token.sh generate_repos_file.sh
 ```
 
 ## Usage
+
+### Choosing the Right Script
+
+- **GitHub CLI Scripts** (`github_stats.sh`, `github_stats_bulk.sh`): Use if you have GitHub CLI installed and authenticated
+- **Token-Based Scripts** (`github_stats_token.sh`, `github_stats_bulk_token.sh`): Use for WSL, Git Bash, or environments without GitHub CLI
+
+Both versions have identical functionality. See [TOKEN_SCRIPTS.md](TOKEN_SCRIPTS.md) for token-based script usage.
 
 ### Single Repository
 
@@ -235,21 +254,22 @@ The `--users` and `--org` flags can appear anywhere in the command, but position
 
 The scripts include built-in rate limit handling:
 
-- **2-second delay** between API requests
+- **3-second delay** between API requests (to stay well under the 30 requests/minute limit)
 - **Automatic retry** (up to 3 attempts) when rate limits are hit
 - **60-second wait** when rate limit is detected before retrying
 - **GitHub Search API limits**: 30 requests/minute for authenticated users
+- **Improved error detection**: Only triggers on actual API rate limit errors (not commit messages containing "rate limit")
 
 For large teams or many repositories, the scripts will automatically slow down to stay within limits.
 
 ## Performance
 
-Approximate execution times:
+Approximate execution times (with 3-second delays between requests):
 
-- **Single repo, no users**: ~5 seconds
-- **Single repo, 17 users**: ~1 minute (34 API calls)
-- **10 repos, 17 users**: ~10 minutes (340 API calls)
-- **50 repos, 17 users**: ~50 minutes (1700 API calls)
+- **Single repo, no users**: ~7 seconds
+- **Single repo, 17 users**: ~2 minutes (34 API calls)
+- **10 repos, 17 users**: ~11 minutes (340 API calls)
+- **50 repos, 17 users**: ~56 minutes (1700 API calls)
 
 ## Troubleshooting
 
@@ -259,9 +279,15 @@ Approximate execution times:
 - PRs are always attributed to the GitHub user who opened them
 
 **Rate limit errors:**
-- The scripts have automatic retry logic
+- The scripts have automatic retry logic with improved error detection
+- Rate limit detection now only triggers on actual API errors (fixed false positives from commit messages)
 - If you consistently hit limits, they will wait 60 seconds and retry
 - For very large organizations, consider running during off-peak hours
+
+**WSL or Git Bash environments:**
+- Use the token-based scripts (`github_stats_token.sh`, `github_stats_bulk_token.sh`)
+- See [TOKEN_SCRIPTS.md](TOKEN_SCRIPTS.md) for setup instructions
+- Requires a GitHub Personal Access Token instead of GitHub CLI
 
 ## Customization
 
