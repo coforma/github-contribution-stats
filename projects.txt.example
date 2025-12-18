@@ -1,0 +1,12 @@
+# Example projects file for GitLab bulk stats
+# One project per line
+# Lines starting with # are comments
+
+# Format options:
+# - namespace/project-name
+# - numeric project ID
+
+# Examples:
+# mygroup/myproject
+# anothergroup/subgroup/project
+# 12345

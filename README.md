@@ -1,18 +1,36 @@
 # GitHub Contribution Stats
 
-Bash scripts to calculate contribution statistics for GitHub repositories with flexible filtering options.
+Bash scripts to calculate contribution statistics for GitHub and GitLab repositories with flexible filtering options.
 
 ## Features
 
-- **Single Repository**: Get stats for one repository
-- **Bulk Analysis**: Analyze multiple repositories and get combined totals
-- **Organization-Wide**: Automatically analyze all repos in a GitHub organization
-- **User Filtering**: Filter contributions by specific GitHub usernames (queries each user individually)
+- **GitHub & GitLab Support**: Scripts for both platforms
+- **Single Repository/Project**: Get stats for one repo/project
+- **Bulk Analysis**: Analyze multiple repositories/projects and get combined totals
+- **Organization/Group-Wide**: Automatically analyze all repos in a GitHub org or GitLab group
+- **User Filtering**: Filter contributions by specific usernames (queries each user individually)
 - **Custom Date Ranges**: Specify a start date or default to January 1st of current year
 - **Rate Limit Handling**: Automatic retry logic with delays to prevent API rate limit errors
 - **Cross-Platform**: Token-based scripts for WSL/Git Bash environments
-- Counts commits (all branches) and pull requests authored by users
-- Two versions: GitHub CLI-based and Token-based (for environments without `gh` CLI)
+- Counts commits (all branches) and pull requests/merge requests authored by users
+
+## Quick Start
+
+**GitHub:**
+- CLI-based: `./github_stats.sh owner/repo`
+- Token-based: `GITHUB_TOKEN=xxx ./github_stats_token.sh owner/repo`
+
+**GitLab:**
+- `GITLAB_TOKEN=xxx ./gitlab_stats.sh namespace/project`
+
+See platform-specific documentation:
+- [GitHub Scripts Documentation](#github-scripts) (this file)
+- [GitLab Scripts Documentation](GITLAB_SCRIPTS.md)
+- [Token-Based Scripts for WSL/Git Bash](TOKEN_SCRIPTS.md)
+
+---
+
+## GitHub Scripts
 
 ## Prerequisites
 
