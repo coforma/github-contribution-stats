@@ -100,6 +100,12 @@ github_api() {
   fi
 }
 
+# Function to URL encode a string
+urlencode() {
+  local string="$1"
+  echo "$string" | jq -sRr @uri
+}
+
 echo "=== Commits (all branches) ==="
 
 COMMITS=0
@@ -109,8 +115,8 @@ if [ ${#USERS[@]} -gt 0 ]; then
   for USERNAME in "${USERS[@]}"; do
     RETRY_COUNT=0
     while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-      QUERY="repo:$REPO+author:$USERNAME+committer-date:>=$START_DATE"
-      RESPONSE=$(github_api "search/commits?q=$(echo $QUERY | sed 's/ /%20/g')" "Accept: application/vnd.github.cloak-preview")
+      QUERY="repo:$REPO author:$USERNAME committer-date:>=$START_DATE"
+      RESPONSE=$(github_api "search/commits?q=$(urlencode "$QUERY")" "Accept: application/vnd.github.cloak-preview")
       
       # Check for rate limit error in API response (not in commit messages)
       if echo "$RESPONSE" | jq -e '.message' 2>/dev/null | grep -qi "rate limit\|API rate limit"; then
@@ -130,11 +136,11 @@ if [ ${#USERS[@]} -gt 0 ]; then
     sleep $DELAY_SECONDS
   done
 else
-  # No user filter - fetch all contributions
+  # No user filter - fetch all contributions (exclude dependabot)
   RETRY_COUNT=0
   while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    QUERY="repo:$REPO+committer-date:>=$START_DATE"
-    RESPONSE=$(github_api "search/commits?q=$(echo $QUERY | sed 's/ /%20/g')" "Accept: application/vnd.github.cloak-preview")
+    QUERY="repo:$REPO committer-date:>=$START_DATE -author:dependabot -author:dependabot[bot]"
+    RESPONSE=$(github_api "search/commits?q=$(urlencode "$QUERY")" "Accept: application/vnd.github.cloak-preview")
     
     # Check for rate limit error in API response (not in commit messages)
     if echo "$RESPONSE" | jq -e '.message' 2>/dev/null | grep -qi "rate limit\|API rate limit"; then
@@ -163,8 +169,8 @@ if [ ${#USERS[@]} -gt 0 ]; then
   for USERNAME in "${USERS[@]}"; do
     RETRY_COUNT=0
     while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-      QUERY="repo:$REPO+type:pr+author:$USERNAME+created:>=$START_DATE"
-      RESPONSE=$(github_api "search/issues?q=$(echo $QUERY | sed 's/ /%20/g')")
+      QUERY="repo:$REPO type:pr author:$USERNAME created:>=$START_DATE"
+      RESPONSE=$(github_api "search/issues?q=$(urlencode "$QUERY")")
       
       # Check for rate limit error in API response (not in commit messages)
       if echo "$RESPONSE" | jq -e '.message' 2>/dev/null | grep -qi "rate limit\|API rate limit"; then
@@ -184,11 +190,11 @@ if [ ${#USERS[@]} -gt 0 ]; then
     sleep $DELAY_SECONDS
   done
 else
-  # No user filter - fetch all contributions
+  # No user filter - fetch all contributions (exclude dependabot)
   RETRY_COUNT=0
   while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    QUERY="repo:$REPO+type:pr+created:>=$START_DATE"
-    RESPONSE=$(github_api "search/issues?q=$(echo $QUERY | sed 's/ /%20/g')")
+    QUERY="repo:$REPO type:pr created:>=$START_DATE -author:dependabot -author:dependabot[bot]"
+    RESPONSE=$(github_api "search/issues?q=$(urlencode "$QUERY")")
     
     # Check for rate limit error in API response (not in commit messages)
     if echo "$RESPONSE" | jq -e '.message' 2>/dev/null | grep -qi "rate limit\|API rate limit"; then

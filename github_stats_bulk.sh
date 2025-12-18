@@ -176,11 +176,11 @@ while IFS= read -r REPO || [ -n "$REPO" ]; do
       REPO_PRS=$((REPO_PRS + USER_PRS))
     done
   else
-    # No user filter - fetch all contributions
+    # No user filter - fetch all contributions (exclude dependabot)
     RETRY_COUNT=0
     MAX_RETRIES=3
     while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-      REPO_COMMITS=$(gh api "search/commits?q=repo:$REPO+committer-date:>=$START_DATE" --jq '.total_count' 2>&1)
+      REPO_COMMITS=$(gh api "search/commits?q=repo:$REPO+committer-date:>=$START_DATE+-author:dependabot+-author:dependabot[bot]" --jq '.total_count' 2>&1)
       
       # Check for rate limit error
       if echo "$REPO_COMMITS" | grep -q "rate limit\|API rate limit\|403"; then
@@ -196,10 +196,10 @@ while IFS= read -r REPO || [ -n "$REPO" ]; do
     REQUEST_COUNT=$((REQUEST_COUNT + 1))
     sleep $DELAY_SECONDS
     
-    # Fetch PRs with retry logic
+    # Fetch PRs with retry logic (exclude dependabot)
     RETRY_COUNT=0
     while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-      REPO_PRS=$(gh api "search/issues?q=repo:$REPO+type:pr+created:>=$START_DATE" --jq '.total_count' 2>&1)
+      REPO_PRS=$(gh api "search/issues?q=repo:$REPO+type:pr+created:>=$START_DATE+-author:dependabot+-author:dependabot[bot]" --jq '.total_count' 2>&1)
       
       # Check for rate limit error
       if echo "$REPO_PRS" | grep -q "rate limit\|API rate limit\|403"; then

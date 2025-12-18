@@ -102,7 +102,7 @@ else
   # No user filter - fetch all contributions
   RETRY_COUNT=0
   while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    COMMITS=$(gh api "search/commits?q=repo:$REPO+committer-date:>=$START_DATE" --jq '.total_count' 2>&1)
+    COMMITS=$(gh api "search/commits?q=repo:$REPO+committer-date:>=$START_DATE+-author:dependabot+-author:dependabot[bot]" --jq '.total_count' 2>&1)
     
     # Check for rate limit error
     if echo "$COMMITS" | grep -q "rate limit\|API rate limit\|403"; then
@@ -151,7 +151,7 @@ else
   # No user filter - fetch all contributions
   RETRY_COUNT=0
   while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    PRS=$(gh api "search/issues?q=repo:$REPO+type:pr+created:>=$START_DATE" --jq '.total_count' 2>&1)
+    PRS=$(gh api "search/issues?q=repo:$REPO+type:pr+created:>=$START_DATE+-author:dependabot+-author:dependabot[bot]" --jq '.total_count' 2>&1)
     
     # Check for rate limit error
     if echo "$PRS" | grep -q "rate limit\|API rate limit\|403"; then
