@@ -1,9 +1,10 @@
 #!/bin/bash
 
 # GitHub Repository Contribution Stats (Token-based)
-# Usage: GITHUB_TOKEN=your_token ./github_stats_token.sh owner/repo [since-date] [--users users-file]
+# Usage: GITHUB_TOKEN=your_token ./github_stats_token.sh owner/repo [since-date] [--users users-file] [--ignore ignore-file]
 
 USERS_FILE=""
+IGNORE_FILE=""
 
 # Parse arguments
 REPO=""
@@ -13,6 +14,10 @@ while [[ $# -gt 0 ]]; do
   case $1 in
     --users)
       USERS_FILE="$2"
+      shift 2
+      ;;
+    --ignore)
+      IGNORE_FILE="$2"
       shift 2
       ;;
     *)
@@ -27,10 +32,11 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [ -z "$REPO" ]; then
-  echo "Usage: GITHUB_TOKEN=your_token $0 owner/repo [since-date] [--users users-file]"
+  echo "Usage: GITHUB_TOKEN=your_token $0 owner/repo [since-date] [--users users-file] [--ignore ignore-file]"
   echo "Example: GITHUB_TOKEN=ghp_xxxx $0 coforma/github-contribution-stats"
   echo "Example: GITHUB_TOKEN=ghp_xxxx $0 coforma/github-contribution-stats 2025-01-01"
   echo "Example: GITHUB_TOKEN=ghp_xxxx $0 coforma/github-contribution-stats 2025-01-01 --users users.txt"
+  echo "Example: GITHUB_TOKEN=ghp_xxxx $0 coforma/github-contribution-stats 2025-01-01 --ignore ignore_authors.txt"
   echo "If no date is provided, defaults to January 1st of the current year"
   exit 1
 fi
@@ -69,10 +75,28 @@ if [ -n "$USERS_FILE" ]; then
   fi
 fi
 
+# Load ignore list into array if ignore file is provided
+IGNORE_AUTHORS=()
+if [ -n "$IGNORE_FILE" ]; then
+  if [ ! -f "$IGNORE_FILE" ]; then
+    echo "Error: Ignore file '$IGNORE_FILE' not found"
+    exit 1
+  fi
+  
+  while IFS= read -r USERNAME || [ -n "$USERNAME" ]; do
+    # Skip empty lines and comments
+    [[ -z "$USERNAME" || "$USERNAME" =~ ^[[:space:]]*# ]] && continue
+    IGNORE_AUTHORS+=("$USERNAME")
+  done < "$IGNORE_FILE"
+fi
+
 echo "Repository: $REPO"
 echo "Date Range: Since $START_DATE"
 if [ -n "$USERS_FILE" ]; then
   echo "Filtering by ${#USERS[@]} users from: $USERS_FILE"
+fi
+if [ -n "$IGNORE_FILE" ]; then
+  echo "Ignoring ${#IGNORE_AUTHORS[@]} authors from: $IGNORE_FILE"
 fi
 echo "============================================"
 echo ""
@@ -136,10 +160,16 @@ if [ ${#USERS[@]} -gt 0 ]; then
     sleep $DELAY_SECONDS
   done
 else
-  # No user filter - fetch all contributions (exclude dependabot)
+  # No user filter - fetch all contributions (exclude ignored authors)
   RETRY_COUNT=0
   while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    QUERY="repo:$REPO committer-date:>=$START_DATE -author:dependabot -author:dependabot[bot]"
+    QUERY="repo:$REPO committer-date:>=$START_DATE"
+    # Add ignore filters
+    if [ ${#IGNORE_AUTHORS[@]} -gt 0 ]; then
+      for IGNORE_USER in "${IGNORE_AUTHORS[@]}"; do
+        QUERY="$QUERY -author:$IGNORE_USER"
+      done
+    fi
     RESPONSE=$(github_api "search/commits?q=$(urlencode "$QUERY")" "Accept: application/vnd.github.cloak-preview")
     
     # Check for rate limit error in API response (not in commit messages)
@@ -190,10 +220,16 @@ if [ ${#USERS[@]} -gt 0 ]; then
     sleep $DELAY_SECONDS
   done
 else
-  # No user filter - fetch all contributions (exclude dependabot)
+  # No user filter - fetch all contributions (exclude ignored authors)
   RETRY_COUNT=0
   while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    QUERY="repo:$REPO type:pr created:>=$START_DATE -author:dependabot -author:dependabot[bot]"
+    QUERY="repo:$REPO type:pr created:>=$START_DATE"
+    # Add ignore filters
+    if [ ${#IGNORE_AUTHORS[@]} -gt 0 ]; then
+      for IGNORE_USER in "${IGNORE_AUTHORS[@]}"; do
+        QUERY="$QUERY -author:$IGNORE_USER"
+      done
+    fi
     RESPONSE=$(github_api "search/issues?q=$(urlencode "$QUERY")")
     
     # Check for rate limit error in API response (not in commit messages)

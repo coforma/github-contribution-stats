@@ -1,0 +1,10 @@
+# Authors to exclude from contribution stats
+# One username per line
+# Lines starting with # are comments
+
+dependabot
+dependabot[bot]
+renovate[bot]
+github-actions[bot]
+# snyk-bot
+# greenkeeper[bot]

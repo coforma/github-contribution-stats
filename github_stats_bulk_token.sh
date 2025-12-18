@@ -1,10 +1,11 @@
 #!/bin/bash
 
 # GitHub Repository Contribution Stats (Bulk, Token-based)
-# Usage: GITHUB_TOKEN=your_token ./github_stats_bulk_token.sh repos.txt [since-date] [--users users-file] [--org organization]
+# Usage: GITHUB_TOKEN=your_token ./github_stats_bulk_token.sh repos.txt [since-date] [--users users-file] [--org organization] [--ignore ignore-file]
 
 USERS_FILE=""
 ORG=""
+IGNORE_FILE=""
 
 # Parse arguments
 REPOS_FILE=""
@@ -18,6 +19,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --org)
       ORG="$2"
+      shift 2
+      ;;
+    --ignore)
+      IGNORE_FILE="$2"
       shift 2
       ;;
     *)
@@ -148,9 +153,27 @@ if [ -n "$USERS_FILE" ]; then
   fi
 fi
 
+# Load ignore list into array if ignore file is provided
+IGNORE_AUTHORS=()
+if [ -n "$IGNORE_FILE" ]; then
+  if [ ! -f "$IGNORE_FILE" ]; then
+    echo "Error: Ignore file '$IGNORE_FILE' not found"
+    exit 1
+  fi
+  
+  while IFS= read -r USERNAME || [ -n "$USERNAME" ]; do
+    # Skip empty lines and comments
+    [[ -z "$USERNAME" || "$USERNAME" =~ ^[[:space:]]*# ]] && continue
+    IGNORE_AUTHORS+=("$USERNAME")
+  done < "$IGNORE_FILE"
+fi
+
 echo "Analyzing repositories since $START_DATE"
 if [ -n "$USERS_FILE" ]; then
   echo "Filtering by ${#USERS[@]} users from: $USERS_FILE"
+fi
+if [ -n "$IGNORE_FILE" ]; then
+  echo "Ignoring ${#IGNORE_AUTHORS[@]} authors from: $IGNORE_FILE"
 fi
 echo "============================================"
 echo ""
@@ -232,10 +255,16 @@ while IFS= read -r REPO || [ -n "$REPO" ]; do
       REPO_PRS=$((REPO_PRS + USER_PRS))
     done
   else
-    # No user filter - fetch all contributions (exclude dependabot)
+    # No user filter - fetch all contributions (exclude ignored authors)
     RETRY_COUNT=0
     while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-      QUERY="repo:$REPO committer-date:>=$START_DATE -author:dependabot -author:dependabot[bot]"
+      QUERY="repo:$REPO committer-date:>=$START_DATE"
+      # Add ignore filters
+      if [ ${#IGNORE_AUTHORS[@]} -gt 0 ]; then
+        for IGNORE_USER in "${IGNORE_AUTHORS[@]}"; do
+          QUERY="$QUERY -author:$IGNORE_USER"
+        done
+      fi
       RESPONSE=$(github_api "search/commits?q=$(urlencode "$QUERY")" "Accept: application/vnd.github.cloak-preview")
       
       # Check for rate limit error in API response (not in commit messages)
@@ -253,10 +282,16 @@ while IFS= read -r REPO || [ -n "$REPO" ]; do
     REQUEST_COUNT=$((REQUEST_COUNT + 1))
     sleep $DELAY_SECONDS
     
-    # Fetch PRs with retry logic (exclude dependabot)
+    # Fetch PRs with retry logic (exclude ignored authors)
     RETRY_COUNT=0
     while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-      QUERY="repo:$REPO type:pr created:>=$START_DATE -author:dependabot -author:dependabot[bot]"
+      QUERY="repo:$REPO type:pr created:>=$START_DATE"
+      # Add ignore filters
+      if [ ${#IGNORE_AUTHORS[@]} -gt 0 ]; then
+        for IGNORE_USER in "${IGNORE_AUTHORS[@]}"; do
+          QUERY="$QUERY -author:$IGNORE_USER"
+        done
+      fi
       RESPONSE=$(github_api "search/issues?q=$(urlencode "$QUERY")")
       
       # Check for rate limit error in API response (not in commit messages)
