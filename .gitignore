@@ -1,5 +1,4 @@
-# Ignore user's custom repos list
-repos.txt
-users.txt
-ignore_authors.txt
-projects.txt
+# Ignore user's custom data files
+data/
+coforma/
+coverage/

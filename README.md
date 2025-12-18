@@ -17,16 +17,16 @@ Bash scripts to calculate contribution statistics for GitHub and GitLab reposito
 ## Quick Start
 
 **GitHub:**
-- CLI-based: `./github_stats.sh owner/repo`
-- Token-based: `GITHUB_TOKEN=xxx ./github_stats_token.sh owner/repo`
+- CLI-based: `./scripts/github_stats.sh owner/repo`
+- Token-based: `GITHUB_TOKEN=xxx ./scripts/github_stats_token.sh owner/repo`
 
 **GitLab:**
-- `GITLAB_TOKEN=xxx ./gitlab_stats.sh namespace/project`
+- `GITLAB_TOKEN=xxx ./scripts/gitlab_stats.sh namespace/project`
 
 See platform-specific documentation:
 - [GitHub Scripts Documentation](#github-scripts) (this file)
-- [GitLab Scripts Documentation](GITLAB_SCRIPTS.md)
-- [Token-Based Scripts for WSL/Git Bash](TOKEN_SCRIPTS.md)
+- [GitLab Scripts Documentation](docs/GITLAB_SCRIPTS.md)
+- [Token-Based Scripts for WSL/Git Bash](docs/TOKEN_SCRIPTS.md)
 
 ---
 
@@ -46,7 +46,7 @@ See platform-specific documentation:
 - GitHub Personal Access Token (PAT)
 - Works on WSL, Git Bash, macOS, Linux
 
-See [TOKEN_SCRIPTS.md](TOKEN_SCRIPTS.md) for detailed token-based script documentation.
+See [docs/TOKEN_SCRIPTS.md](docs/TOKEN_SCRIPTS.md) for detailed token-based script documentation.
 
 ## Installation
 
@@ -56,7 +56,7 @@ git clone https://github.com/coforma/github-contribution-stats.git
 cd github-contribution-stats
 
 # Make scripts executable
-chmod +x github_stats.sh github_stats_bulk.sh github_stats_token.sh github_stats_bulk_token.sh generate_repos_file.sh
+chmod +x scripts/*.sh
 ```
 
 ## Usage
@@ -66,43 +66,37 @@ chmod +x github_stats.sh github_stats_bulk.sh github_stats_token.sh github_stats
 - **GitHub CLI Scripts** (`github_stats.sh`, `github_stats_bulk.sh`): Use if you have GitHub CLI installed and authenticated
 - **Token-Based Scripts** (`github_stats_token.sh`, `github_stats_bulk_token.sh`): Use for WSL, Git Bash, or environments without GitHub CLI
 
-Both versions have identical functionality. See [TOKEN_SCRIPTS.md](TOKEN_SCRIPTS.md) for token-based script usage.
+Both versions have identical functionality. See [docs/TOKEN_SCRIPTS.md](docs/TOKEN_SCRIPTS.md) for token-based script usage.
 
 ### Single Repository
 
 Get contribution stats for a single repository:
 
 ```bash
-./github_stats.sh owner/repo [since-date] [--users users-file]
+./scripts/github_stats.sh owner/repo [since-date] [--users users-file] [--ignore ignore-file]
 ```
 
 **Examples:**
 ```bash
 # Use default date (January 1st of current year)
-./github_stats.sh coforma/coforma-website-v2
+./scripts/github_stats.sh coforma/coforma-website-v2
 
 # Specify a custom start date
-./github_stats.sh coforma/coforma-website-v2 2024-06-01
+./scripts/github_stats.sh coforma/coforma-website-v2 2024-06-01
 
 # Filter by specific users
-./github_stats.sh coforma/github-contribution-stats 2025-01-01 --users users.txt
+./scripts/github_stats.sh coforma/github-contribution-stats 2025-01-01 --users data/users.txt
 ```
 
 **Output:**
 ```
 Repository: coforma/github-contribution-stats
 Date Range: Since 2025-01-01
-Filtering by 17 users from: users.txt
+Filtering by 17 users from: data/users.txt
 ============================================
-
-=== Commits (all branches) ===
-116
 
 === Pull Requests ===
 124
-
-============================================
-Total Contributions: 240
 ```
 
 ### Multiple Repositories (Bulk)
@@ -114,8 +108,8 @@ Analyze multiple repositories at once using a repos file or an entire organizati
 1. Create a text file with repositories (one per line):
 
 ```bash
-cp repos.txt.example repos.txt
-# Edit repos.txt with your repositories
+cp examples/repos.txt.example data/repos.txt
+# Edit data/repos.txt with your repositories
 ```
 
 **repos.txt format:**
@@ -129,19 +123,19 @@ your-org/your-repo
 2. Run the bulk script:
 
 ```bash
-./github_stats_bulk.sh repos.txt [since-date] [--users users-file]
+./scripts/github_stats_bulk.sh data/repos.txt [since-date] [--users data/users.txt] [--ignore data/ignore_authors.txt]
 ```
 
 **Examples:**
 ```bash
 # Use default date (January 1st of current year)
-./github_stats_bulk.sh repos.txt
+./scripts/github_stats_bulk.sh data/repos.txt
 
 # Specify a custom start date
-./github_stats_bulk.sh repos.txt 2024-06-01
+./scripts/github_stats_bulk.sh data/repos.txt 2024-06-01
 
 # Filter by specific users
-./github_stats_bulk.sh repos.txt 2025-01-01 --users users.txt
+./scripts/github_stats_bulk.sh data/repos.txt 2025-01-01 --users data/users.txt
 ```
 
 #### Option 2: Using an Organization
@@ -149,19 +143,19 @@ your-org/your-repo
 Automatically analyze all repositories in a GitHub organization:
 
 ```bash
-./github_stats_bulk.sh --org <organization> [since-date] [--users users-file]
+./scripts/github_stats_bulk.sh --org <organization> [since-date] [--users data/users.txt] [--ignore data/ignore_authors.txt]
 ```
 
 **Examples:**
 ```bash
 # Analyze all repos in the organization
-./github_stats_bulk.sh --org coforma
+./scripts/github_stats_bulk.sh --org coforma
 
 # With custom date
-./github_stats_bulk.sh --org coforma 2024-01-01
+./scripts/github_stats_bulk.sh --org coforma 2024-01-01
 
-# With user filtering
-./github_stats_bulk.sh --org coforma 2025-01-01 --users users.txt
+# With user filtering and ignore list
+./scripts/github_stats_bulk.sh --org coforma 2025-01-01 --users data/users.txt --ignore data/ignore_authors.txt
 ```
 
 **Output:**
@@ -170,25 +164,19 @@ Fetching repositories from organization: coforma
 Found 50 repositories
 
 Analyzing repositories since 2025-01-01
-Filtering by 17 users from: users.txt
+Filtering by 17 users from: data/users.txt
 ============================================
 
 Processing: coforma/github-contribution-stats
-  Commits: 298
   Pull Requests: 357
-  Subtotal: 655
 
 Processing: coforma/usa-spending-bot
-  Commits: 116
   Pull Requests: 124
-  Subtotal: 240
 
 ============================================
 SUMMARY
 ============================================
-Total Commits: 414
 Total Pull Requests: 481
-Grand Total: 895
 ```
 
 ### Helper Script: Generate Repos File
@@ -196,16 +184,16 @@ Grand Total: 895
 Use the helper script to create a repos.txt file from an organization:
 
 ```bash
-./generate_repos_file.sh <organization> [output-file]
+./scripts/generate_repos_file.sh <organization> [output-file]
 ```
 
 **Examples:**
 ```bash
 # Generate repos.txt from organization
-./generate_repos_file.sh coforma
+./scripts/generate_repos_file.sh coforma data/repos.txt
 
 # Specify custom output file
-./generate_repos_file.sh coforma my-repos.txt
+./scripts/generate_repos_file.sh coforma data/my-repos.txt
 ```
 
 This fetches up to 1000 repositories and saves them in the correct format for the bulk script.
@@ -217,8 +205,8 @@ To filter contributions by specific GitHub usernames:
 1. Create a users file:
 
 ```bash
-cp users.txt.example users.txt
-# Edit users.txt with your GitHub usernames
+cp examples/users.txt.example data/users.txt
+# Edit data/users.txt with your GitHub usernames
 ```
 
 **users.txt format:**
@@ -232,20 +220,49 @@ username3
 2. Use the `--users` flag with either script:
 
 ```bash
-./github_stats.sh coforma/github-contribution-stats --users users.txt
-./github_stats_bulk.sh repos.txt --users users.txt
-./github_stats_bulk.sh --org coforma --users users.txt
+./scripts/github_stats.sh coforma/github-contribution-stats --users data/users.txt
+./scripts/github_stats_bulk.sh data/repos.txt --users data/users.txt
+./scripts/github_stats_bulk.sh --org coforma --users data/users.txt
 ```
 
-**Important:** The script queries each user individually through the GitHub API. For 17 users analyzing 1 repository, this makes 34 API calls (17 for commits + 17 for PRs), which takes approximately 1 minute with the built-in rate limit delays.
+**Important:** The script queries each user individually through the GitHub API. For 17 users analyzing 1 repository, this makes 34 API calls (17 for PRs), which takes approximately 30 seconds with the built-in rate limit delays.
+
+### Ignoring Authors (Bot Accounts)
+
+To exclude bot accounts like dependabot or renovate from your statistics:
+
+1. Create an ignore authors file:
+
+```bash
+cp examples/ignore_authors.txt.example data/ignore_authors.txt
+# Edit data/ignore_authors.txt with authors to exclude
+```
+
+**ignore_authors.txt format:**
+```
+# Lines starting with # are comments
+# One author per line
+dependabot
+dependabot[bot]
+renovate[bot]
+github-actions[bot]
+```
+
+2. Use the `--ignore` flag with any script:
+
+```bash
+./scripts/github_stats.sh coforma/github-contribution-stats --ignore data/ignore_authors.txt
+./scripts/github_stats_bulk.sh data/repos.txt --ignore data/ignore_authors.txt
+./scripts/github_stats_bulk.sh --org coforma --ignore data/ignore_authors.txt
+```
+
+**Note:** The ignore filter is only applied when NOT using `--users`. If you specify users, only those users are counted (ignore list is not needed).
 
 ## What's Counted
 
-- **Commits**: All commits across all branches where the GitHub user is listed as the author (uses `author:username` filter)
 - **Pull Requests**: All PRs created by the specified users (uses `author:username` filter)
 - **Date Range**: Since the specified date or January 1st of the current year by default
-
-**Note on Commits:** The commit count uses GitHub's `author:username` filter, which only counts commits where the git commit author email matches the user's GitHub account. If developers have mismatched git emails, their commits may not be counted.
+- **Exclusions**: When using `--ignore`, bot accounts and automated contributors are excluded from counts
 
 ## Advanced Usage
 
@@ -255,10 +272,10 @@ You can combine date ranges and user filtering with either repos files or organi
 
 ```bash
 # Repos file with users from June 1st, 2024 onwards
-./github_stats_bulk.sh repos.txt 2024-06-01 --users users.txt
+./scripts/github_stats_bulk.sh data/repos.txt 2024-06-01 --users data/users.txt
 
-# Organization with custom date and user filter
-./github_stats_bulk.sh --org coforma 2024-01-01 --users users.txt
+# Organization with custom date, user filter, and ignore list
+./scripts/github_stats_bulk.sh --org coforma 2024-01-01 --users data/users.txt --ignore data/ignore_authors.txt
 ```
 
 ### Parameter Order
@@ -284,17 +301,12 @@ For large teams or many repositories, the scripts will automatically slow down t
 
 Approximate execution times (with 3-second delays between requests):
 
-- **Single repo, no users**: ~7 seconds
-- **Single repo, 17 users**: ~2 minutes (34 API calls)
-- **10 repos, 17 users**: ~11 minutes (340 API calls)
-- **50 repos, 17 users**: ~56 minutes (1700 API calls)
+- **Single repo, no users**: ~4 seconds
+- **Single repo, 17 users**: ~1 minute (17 API calls)
+- **10 repos, 17 users**: ~6 minutes (170 API calls)
+- **50 repos, 17 users**: ~28 minutes (850 API calls)
 
 ## Troubleshooting
-
-**Low commit counts compared to PRs:**
-- Check that developers' git commit emails match their GitHub accounts
-- Commits authored with non-matching emails won't be counted
-- PRs are always attributed to the GitHub user who opened them
 
 **Rate limit errors:**
 - The scripts have automatic retry logic with improved error detection
@@ -303,8 +315,8 @@ Approximate execution times (with 3-second delays between requests):
 - For very large organizations, consider running during off-peak hours
 
 **WSL or Git Bash environments:**
-- Use the token-based scripts (`github_stats_token.sh`, `github_stats_bulk_token.sh`)
-- See [TOKEN_SCRIPTS.md](TOKEN_SCRIPTS.md) for setup instructions
+- Use the token-based scripts (`scripts/github_stats_token.sh`, `scripts/github_stats_bulk_token.sh`)
+- See [docs/TOKEN_SCRIPTS.md](docs/TOKEN_SCRIPTS.md) for setup instructions
 - Requires a GitHub Personal Access Token instead of GitHub CLI
 
 ## Customization
