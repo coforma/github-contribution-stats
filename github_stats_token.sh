@@ -130,66 +130,6 @@ urlencode() {
   echo "$string" | jq -sRr @uri
 }
 
-echo "=== Commits (all branches) ==="
-
-COMMITS=0
-
-# If users are specified, query each user individually
-if [ ${#USERS[@]} -gt 0 ]; then
-  for USERNAME in "${USERS[@]}"; do
-    RETRY_COUNT=0
-    while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-      QUERY="repo:$REPO author:$USERNAME committer-date:>=$START_DATE"
-      RESPONSE=$(github_api "search/commits?q=$(urlencode "$QUERY")" "Accept: application/vnd.github.cloak-preview")
-      
-      # Check for rate limit error in API response (not in commit messages)
-      if echo "$RESPONSE" | jq -e '.message' 2>/dev/null | grep -qi "rate limit\|API rate limit"; then
-        echo "⚠️  Rate limit hit for commits (user: $USERNAME), waiting 60 seconds..."
-        sleep 60
-        RETRY_COUNT=$((RETRY_COUNT + 1))
-        continue
-      fi
-      
-      USER_COMMITS=$(echo "$RESPONSE" | jq -r '.total_count // 0')
-      break
-    done
-    
-    if [ -z "$USER_COMMITS" ] || ! [[ "$USER_COMMITS" =~ ^[0-9]+$ ]]; then USER_COMMITS=0; fi
-    COMMITS=$((COMMITS + USER_COMMITS))
-    echo "  $USERNAME: $USER_COMMITS commits"
-    sleep $DELAY_SECONDS
-  done
-else
-  # No user filter - fetch all contributions (exclude ignored authors)
-  RETRY_COUNT=0
-  while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    QUERY="repo:$REPO committer-date:>=$START_DATE"
-    # Add ignore filters
-    if [ ${#IGNORE_AUTHORS[@]} -gt 0 ]; then
-      for IGNORE_USER in "${IGNORE_AUTHORS[@]}"; do
-        QUERY="$QUERY -author:$IGNORE_USER"
-      done
-    fi
-    RESPONSE=$(github_api "search/commits?q=$(urlencode "$QUERY")" "Accept: application/vnd.github.cloak-preview")
-    
-    # Check for rate limit error in API response (not in commit messages)
-    if echo "$RESPONSE" | jq -e '.message' 2>/dev/null | grep -qi "rate limit\|API rate limit"; then
-      echo "⚠️  Rate limit hit for commits, waiting 60 seconds..."
-      sleep 60
-      RETRY_COUNT=$((RETRY_COUNT + 1))
-      continue
-    fi
-    
-    COMMITS=$(echo "$RESPONSE" | jq -r '.total_count // 0')
-    break
-  done
-  
-  if [ -z "$COMMITS" ] || ! [[ "$COMMITS" =~ ^[0-9]+$ ]]; then COMMITS=0; fi
-fi
-
-echo "$COMMITS"
-
-echo ""
 echo "=== Pull Requests ==="
 
 PRS=0

@@ -178,7 +178,6 @@ fi
 echo "============================================"
 echo ""
 
-TOTAL_COMMITS=0
 TOTAL_PRS=0
 REQUEST_COUNT=0
 
@@ -200,33 +199,11 @@ while IFS= read -r REPO || [ -n "$REPO" ]; do
   
   echo "Processing: $REPO"
   
-  REPO_COMMITS=0
   REPO_PRS=0
   
   # If users are specified, query each user individually
   if [ ${#USERS[@]} -gt 0 ]; then
     for USERNAME in "${USERS[@]}"; do
-      # Fetch commits for this user with retry logic
-      RETRY_COUNT=0
-      while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-        QUERY="repo:$REPO author:$USERNAME committer-date:>=$START_DATE"
-        RESPONSE=$(github_api "search/commits?q=$(urlencode "$QUERY")" "Accept: application/vnd.github.cloak-preview")
-        
-        # Check for rate limit error in API response (not in commit messages)
-        if echo "$RESPONSE" | jq -e '.message' 2>/dev/null | grep -qi "rate limit\|API rate limit"; then
-          echo "  ⚠️  Rate limit hit for commits (user: $USERNAME), waiting 60 seconds..."
-          sleep 60
-          RETRY_COUNT=$((RETRY_COUNT + 1))
-          continue
-        fi
-        
-        USER_COMMITS=$(echo "$RESPONSE" | jq -r '.total_count // 0')
-        break
-      done
-      
-      REQUEST_COUNT=$((REQUEST_COUNT + 1))
-      sleep $DELAY_SECONDS
-      
       # Fetch PRs for this user with retry logic
       RETRY_COUNT=0
       while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
@@ -248,40 +225,12 @@ while IFS= read -r REPO || [ -n "$REPO" ]; do
       REQUEST_COUNT=$((REQUEST_COUNT + 1))
       sleep $DELAY_SECONDS
       
-      if [ -z "$USER_COMMITS" ] || ! [[ "$USER_COMMITS" =~ ^[0-9]+$ ]]; then USER_COMMITS=0; fi
       if [ -z "$USER_PRS" ] || ! [[ "$USER_PRS" =~ ^[0-9]+$ ]]; then USER_PRS=0; fi
       
-      REPO_COMMITS=$((REPO_COMMITS + USER_COMMITS))
       REPO_PRS=$((REPO_PRS + USER_PRS))
     done
   else
     # No user filter - fetch all contributions (exclude ignored authors)
-    RETRY_COUNT=0
-    while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-      QUERY="repo:$REPO committer-date:>=$START_DATE"
-      # Add ignore filters
-      if [ ${#IGNORE_AUTHORS[@]} -gt 0 ]; then
-        for IGNORE_USER in "${IGNORE_AUTHORS[@]}"; do
-          QUERY="$QUERY -author:$IGNORE_USER"
-        done
-      fi
-      RESPONSE=$(github_api "search/commits?q=$(urlencode "$QUERY")" "Accept: application/vnd.github.cloak-preview")
-      
-      # Check for rate limit error in API response (not in commit messages)
-      if echo "$RESPONSE" | jq -e '.message' 2>/dev/null | grep -qi "rate limit\|API rate limit"; then
-        echo "  ⚠️  Rate limit hit for commits, waiting 60 seconds..."
-        sleep 60
-        RETRY_COUNT=$((RETRY_COUNT + 1))
-        continue
-      fi
-      
-      REPO_COMMITS=$(echo "$RESPONSE" | jq -r '.total_count // 0')
-      break
-    done
-    
-    REQUEST_COUNT=$((REQUEST_COUNT + 1))
-    sleep $DELAY_SECONDS
-    
     # Fetch PRs with retry logic (exclude ignored authors)
     RETRY_COUNT=0
     while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
@@ -308,18 +257,12 @@ while IFS= read -r REPO || [ -n "$REPO" ]; do
     
     REQUEST_COUNT=$((REQUEST_COUNT + 1))
     
-    if [ -z "$REPO_COMMITS" ] || ! [[ "$REPO_COMMITS" =~ ^[0-9]+$ ]]; then REPO_COMMITS=0; fi
     if [ -z "$REPO_PRS" ] || ! [[ "$REPO_PRS" =~ ^[0-9]+$ ]]; then REPO_PRS=0; fi
   fi
   
-  REPO_TOTAL=$((REPO_COMMITS + REPO_PRS))
-  
-  echo "  Commits: $REPO_COMMITS"
   echo "  Pull Requests: $REPO_PRS"
-  echo "  Subtotal: $REPO_TOTAL"
   echo ""
   
-  TOTAL_COMMITS=$((TOTAL_COMMITS + REPO_COMMITS))
   TOTAL_PRS=$((TOTAL_PRS + REPO_PRS))
   
   # Add delay between repositories
@@ -331,11 +274,7 @@ if [ -n "$ORG" ]; then
   rm -f "$TEMP_REPOS_FILE"
 fi
 
-GRAND_TOTAL=$((TOTAL_COMMITS + TOTAL_PRS))
-
 echo "============================================"
 echo "SUMMARY"
 echo "============================================"
-echo "Total Commits: $TOTAL_COMMITS"
 echo "Total Pull Requests: $TOTAL_PRS"
-echo "Grand Total: $GRAND_TOTAL"
